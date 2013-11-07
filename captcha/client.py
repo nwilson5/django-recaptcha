@@ -1,5 +1,11 @@
 import urllib
-import urllib2
+from django.utils import six
+if six.PY2:
+    from urllib import urlencode
+    from urllib2 import Request as urllib_request, urlopen
+elif six.PY3:
+    from urllib.parse import urlencode
+    from urllib import request as urllib_request, urlopen
 
 from django.conf import settings
 from django.template.loader import render_to_string
@@ -85,11 +91,11 @@ def submit(recaptcha_challenge_field,
         )
 
     def encode_if_necessary(s):
-        if isinstance(s, unicode):
+        if isinstance(s, six.text_type):
             return s.encode('utf-8')
         return s
 
-    params = urllib.urlencode({
+    params = urlencode({
             'privatekey': encode_if_necessary(private_key),
             'remoteip':  encode_if_necessary(remoteip),
             'challenge':  encode_if_necessary(recaptcha_challenge_field),
@@ -101,7 +107,7 @@ def submit(recaptcha_challenge_field,
     else:
         verify_url = 'http://%s/recaptcha/api/verify' % VERIFY_SERVER
 
-    request = urllib2.Request(
+    request = urllib_request(
         url=verify_url,
         data=params,
         headers={
@@ -110,7 +116,7 @@ def submit(recaptcha_challenge_field,
             }
         )
 
-    httpresp = urllib2.urlopen(request)
+    httpresp = urlopen(request)
 
     return_values = httpresp.read().splitlines()
     httpresp.close()
